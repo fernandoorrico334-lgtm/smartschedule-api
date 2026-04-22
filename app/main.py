@@ -8,15 +8,24 @@ from app.models import Appointment
 from app.schemas import AppointmentConfirm, AppointmentCreate, AppointmentResponse
 from app.services import confirm_appointment, create_appointment, get_available_slots
 
+# Cria as tabelas no banco
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title=settings.APP_NAME)
+app = FastAPI(
+    title=settings.APP_NAME,
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+)
 
+# CORS liberado para desenvolvimento e integração com seu front
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "https://smartschedule-site.vercel.app",
+        "*",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -26,7 +35,11 @@ app.add_middleware(
 
 @app.get("/")
 def healthcheck():
-    return {"status": "ok", "service": settings.APP_NAME}
+    return {
+        "status": "ok",
+        "service": settings.APP_NAME,
+        "message": "API online e funcionando",
+    }
 
 
 @app.get("/slots")
@@ -35,7 +48,10 @@ def list_slots(db: Session = Depends(get_db)):
 
 
 @app.post("/appointments", response_model=AppointmentResponse, status_code=201)
-def create_appointment_endpoint(payload: AppointmentCreate, db: Session = Depends(get_db)):
+def create_appointment_endpoint(
+    payload: AppointmentCreate,
+    db: Session = Depends(get_db),
+):
     appointment = create_appointment(
         db=db,
         nome=payload.nome,
